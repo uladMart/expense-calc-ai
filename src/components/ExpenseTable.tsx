@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Paper, 
   Table, 
@@ -7,7 +7,9 @@ import {
   TableContainer, 
   TableHead, 
   TableRow,
-  Typography
+  Typography,
+  Collapse,
+  Box
 } from '@mui/material';
 import { Expense } from '../types';
 
@@ -16,6 +18,33 @@ interface ExpenseTableProps {
 }
 
 const ExpenseTable: React.FC<ExpenseTableProps> = ({ expenses }) => {
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [prevExpenses, setPrevExpenses] = useState<Expense[]>([]);
+  
+  // Check for updated expenses
+  useEffect(() => {
+    if (prevExpenses.length > 0 && expenses.length === prevExpenses.length) {
+      // Find updated expense (amount changed but id remains the same)
+      for (let i = 0; i < expenses.length; i++) {
+        const curr = expenses[i];
+        const prev = prevExpenses.find(p => p.category === curr.category);
+        
+        if (prev && prev.amount !== curr.amount) {
+          setHighlightedId(curr.id);
+          
+          // Clear highlighted id after animation
+          setTimeout(() => {
+            setHighlightedId(null);
+          }, 2000);
+          
+          break;
+        }
+      }
+    }
+    
+    setPrevExpenses([...expenses]);
+  }, [expenses]);
+
   if (expenses.length === 0) {
     return (
       <Paper elevation={3} sx={{ p: 3, mb: 3, textAlign: 'center', bgcolor: '#f5f9ff' }}>
@@ -37,10 +66,43 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({ expenses }) => {
         </TableHead>
         <TableBody>
           {expenses.map((expense) => (
-            <TableRow key={expense.id}>
+            <TableRow 
+              key={expense.id}
+              sx={{
+                bgcolor: highlightedId === expense.id ? 'rgba(25, 118, 210, 0.1)' : 'inherit',
+                transition: 'background-color 0.5s ease',
+              }}
+            >
               <TableCell>{expense.category}</TableCell>
               <TableCell align="right">
                 {expense.amount.toLocaleString()}
+                {highlightedId === expense.id && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      right: '20px',
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      bgcolor: '#1976d2',
+                      animation: 'pulse 1s infinite',
+                      '@keyframes pulse': {
+                        '0%': {
+                          transform: 'scale(0.95)',
+                          boxShadow: '0 0 0 0 rgba(25, 118, 210, 0.7)',
+                        },
+                        '70%': {
+                          transform: 'scale(1)',
+                          boxShadow: '0 0 0 10px rgba(25, 118, 210, 0)',
+                        },
+                        '100%': {
+                          transform: 'scale(0.95)',
+                          boxShadow: '0 0 0 0 rgba(25, 118, 210, 0)',
+                        },
+                      },
+                    }}
+                  />
+                )}
               </TableCell>
             </TableRow>
           ))}

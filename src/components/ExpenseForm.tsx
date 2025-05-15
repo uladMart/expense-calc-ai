@@ -5,16 +5,19 @@ import {
   Box, 
   Grid, 
   Paper,
-  Typography
+  Typography,
+  Autocomplete,
+  Chip
 } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import { Expense } from '../types';
 
 interface ExpenseFormProps {
   onAddExpense: (expense: Expense) => void;
+  existingCategories?: string[];
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, existingCategories = [] }) => {
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -59,15 +62,28 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
       <Box component="form" onSubmit={handleSubmit}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={5}>
-            <TextField
-              fullWidth
-              label="Category"
-              variant="outlined"
+            <Autocomplete
+              freeSolo
+              options={existingCategories}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              error={error?.includes('Category')}
-              helperText={error?.includes('Category') ? error : ''}
-              sx={{ '& .MuiOutlinedInput-root': { '&.Mui-focused fieldset': { borderColor: '#1976d2' } } }}
+              onChange={(_, newValue) => {
+                setCategory(newValue || '');
+              }}
+              inputValue={category}
+              onInputChange={(_, newInputValue) => {
+                setCategory(newInputValue);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  label="Category"
+                  variant="outlined"
+                  error={error?.includes('Category')}
+                  helperText={error?.includes('Category') ? error : ''}
+                  sx={{ '& .MuiOutlinedInput-root': { '&.Mui-focused fieldset': { borderColor: '#1976d2' } } }}
+                />
+              )}
             />
           </Grid>
           <Grid item xs={12} sm={5}>
@@ -99,6 +115,27 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
             </Button>
           </Grid>
         </Grid>
+        
+        {existingCategories.length > 0 && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+              Quick select from existing categories:
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {existingCategories.map((cat) => (
+                <Chip 
+                  key={cat} 
+                  label={cat} 
+                  onClick={() => setCategory(cat)}
+                  sx={{ 
+                    bgcolor: category === cat ? '#bbdefb' : 'white',
+                    '&:hover': { bgcolor: '#e3f2fd' } 
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
       </Box>
     </Paper>
   );

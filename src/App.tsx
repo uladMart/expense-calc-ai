@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Container, 
   Typography, 
@@ -8,7 +8,9 @@ import {
   AppBar, 
   Toolbar,
   createTheme,
-  ThemeProvider
+  ThemeProvider,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import ExpenseForm from './components/ExpenseForm';
@@ -39,9 +41,64 @@ const theme = createTheme({
 const App: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<ExpenseSummaryType | null>(null);
+  const [notification, setNotification] = useState<{
+    open: boolean, 
+    message: string, 
+    category: string,
+    before: number,
+    after: number
+  }>({
+    open: false,
+    message: '',
+    category: '',
+    before: 0,
+    after: 0
+  });
+
+  // Extract unique categories from expenses
+  const existingCategories = useMemo(() => {
+    const categoriesSet = new Set<string>();
+    expenses.forEach(expense => categoriesSet.add(expense.category));
+    return Array.from(categoriesSet);
+  }, [expenses]);
+
+  const handleCloseNotification = () => {
+    setNotification({...notification, open: false});
+  };
 
   const handleAddExpense = (expense: Expense) => {
-    setExpenses(prev => [...prev, expense]);
+    setExpenses(prev => {
+      // Check if the category already exists
+      const existingExpenseIndex = prev.findIndex(
+        item => item.category.toLowerCase() === expense.category.toLowerCase()
+      );
+      
+      if (existingExpenseIndex !== -1) {
+        // Category exists, update the amount
+        const updatedExpenses = [...prev];
+        const previousAmount = updatedExpenses[existingExpenseIndex].amount;
+        const newAmount = previousAmount + expense.amount;
+        
+        updatedExpenses[existingExpenseIndex] = {
+          ...updatedExpenses[existingExpenseIndex],
+          amount: newAmount
+        };
+        
+        // Show notification
+        setNotification({
+          open: true,
+          message: `Updated existing category`,
+          category: expense.category,
+          before: previousAmount,
+          after: newAmount
+        });
+        
+        return updatedExpenses;
+      } else {
+        // Category doesn't exist, add as new expense
+        return [...prev, expense];
+      }
+    });
   };
 
   const calculateSummary = () => {
@@ -100,7 +157,10 @@ const App: React.FC = () => {
         </AppBar>
         
         <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-          <ExpenseForm onAddExpense={handleAddExpense} />
+          <ExpenseForm 
+            onAddExpense={handleAddExpense} 
+            existingCategories={existingCategories}
+          />
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
             <Button 
@@ -135,6 +195,28 @@ const App: React.FC = () => {
           <ExpenseTable expenses={expenses} />
           <ExpenseSummary summary={summary} />
           
+          <Snackbar
+            open={notification.open}
+            autoHideDuration={4000}
+            onClose={handleCloseNotification}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert 
+              onClose={handleCloseNotification} 
+              severity="success"
+              sx={{ width: '100%' }}
+            >
+              <Typography variant="subtitle2">
+                {notification.message}: <strong>{notification.category}</strong>
+              </Typography>
+              <Typography variant="body2">
+                Previous amount: ${notification.before.toLocaleString()}
+              </Typography>
+              <Typography variant="body2">
+                New amount: ${notification.after.toLocaleString()}
+              </Typography>
+            </Alert>
+          </Snackbar>
         </Container>
       </Box>
     </ThemeProvider>
