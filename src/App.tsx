@@ -10,12 +10,15 @@ import {
   createTheme,
   ThemeProvider,
   Snackbar,
-  Alert
+  Alert,
+  Divider
 } from '@mui/material';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseTable from './components/ExpenseTable';
 import ExpenseSummary from './components/ExpenseSummary';
+import Clock from './components/Clock';
+import LocationInfo from './components/LocationInfo';
 import { Expense, ExpenseSummary as ExpenseSummaryType } from './types';
 
 // Create a blue theme
@@ -148,11 +151,19 @@ const App: React.FC = () => {
       <CssBaseline />
       <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: 'background.default' }}>
         <AppBar position="static">
-          <Toolbar>
-            <CalculateIcon sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Expense Calculator
-            </Typography>
+          <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <CalculateIcon sx={{ mr: 2 }} />
+              <Typography variant="h6" component="div">
+                Expense Calculator
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <LocationInfo />
+              <Divider orientation="vertical" flexItem sx={{ mx: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+              <Clock />
+            </Box>
           </Toolbar>
         </AppBar>
         
