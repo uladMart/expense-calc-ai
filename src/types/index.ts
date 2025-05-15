@@ -2,6 +2,7 @@ export interface Expense {
   id: string;
   category: string;
   amount: number;
+  createdAt: Date;
 }
 
 export interface ExpenseSummary {

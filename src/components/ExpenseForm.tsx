@@ -37,15 +37,15 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, existingCategor
       return;
     }
     
-    // Create new expense
-    const newExpense: Expense = {
+    // Create new expense (дата будет добавлена в App.tsx)
+    const newExpense: Omit<Expense, 'createdAt'> = {
       id: uuidv4(),
       category: category.trim(),
       amount: amountValue
     };
     
     // Add expense
-    onAddExpense(newExpense);
+    onAddExpense(newExpense as Expense);
     
     // Reset form
     setCategory('');

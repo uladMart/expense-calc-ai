@@ -11,14 +11,20 @@ import {
   ThemeProvider,
   Snackbar,
   Alert,
-  Divider
+  Divider,
+  Grid,
+  Chip,
+  IconButton
 } from '@mui/material';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import ClearIcon from '@mui/icons-material/Clear';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseTable from './components/ExpenseTable';
 import ExpenseSummary from './components/ExpenseSummary';
 import Clock from './components/Clock';
 import LocationInfo from './components/LocationInfo';
+import ExpenseCalendar from './components/ExpenseCalendar';
 import { Expense, ExpenseSummary as ExpenseSummaryType } from './types';
 
 // Create a blue theme
@@ -44,6 +50,7 @@ const theme = createTheme({
 const App: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<ExpenseSummaryType | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [notification, setNotification] = useState<{
     open: boolean, 
     message: string, 
@@ -58,6 +65,24 @@ const App: React.FC = () => {
     after: 0
   });
 
+  // Форматирование даты
+  const formatDate = (date: Date): string => {
+    return new Date(date).toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Вспомогательная функция для сравнения дат (только день, месяц, год)
+  const isSameDay = (date1: Date, date2: Date): boolean => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  };
+
   // Extract unique categories from expenses
   const existingCategories = useMemo(() => {
     const categoriesSet = new Set<string>();
@@ -65,11 +90,31 @@ const App: React.FC = () => {
     return Array.from(categoriesSet);
   }, [expenses]);
 
+  // Фильтруем расходы по выбранной дате
+  const filteredExpenses = useMemo(() => {
+    if (!selectedDate) return expenses;
+    
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.createdAt);
+      return isSameDay(expenseDate, selectedDate);
+    });
+  }, [expenses, selectedDate]);
+
   const handleCloseNotification = () => {
     setNotification({...notification, open: false});
   };
 
   const handleAddExpense = (expense: Expense) => {
+    // Создаем новую дату и устанавливаем время на начало дня
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    // Добавляем текущую дату к расходу
+    const expenseWithDate = {
+      ...expense,
+      createdAt: now
+    };
+
     setExpenses(prev => {
       // Check if the category already exists
       const existingExpenseIndex = prev.findIndex(
@@ -84,7 +129,8 @@ const App: React.FC = () => {
         
         updatedExpenses[existingExpenseIndex] = {
           ...updatedExpenses[existingExpenseIndex],
-          amount: newAmount
+          amount: newAmount,
+          createdAt: now // Обновляем дату при изменении суммы
         };
         
         // Show notification
@@ -99,24 +145,24 @@ const App: React.FC = () => {
         return updatedExpenses;
       } else {
         // Category doesn't exist, add as new expense
-        return [...prev, expense];
+        return [...prev, expenseWithDate];
       }
     });
   };
 
   const calculateSummary = () => {
-    if (expenses.length === 0) {
+    if (filteredExpenses.length === 0) {
       return;
     }
 
-    // Calculate total
-    const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    // Calculate total for filtered expenses
+    const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     // Calculate daily average (assuming 30 days per month)
     const dailyAverage = totalAmount / 30;
     
-    // Get top 3 expenses
-    const topExpenses = [...expenses]
+    // Get top 3 expenses from filtered expenses
+    const topExpenses = [...filteredExpenses]
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 3);
       
@@ -127,15 +173,45 @@ const App: React.FC = () => {
     });
   };
 
+  // Обработчик выбора даты
+  const handleSelectDate = (date: Date) => {
+    // Если выбрана та же дата, снимаем выбор
+    if (selectedDate && isSameDay(selectedDate, date)) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(date);
+    }
+  };
+
+  // Очистка выбранной даты
+  const clearSelectedDate = () => {
+    setSelectedDate(null);
+  };
+
   // Sample data for demonstration
   const addSampleData = () => {
+    // Создаем даты с установкой времени на начало дня
+    const createDate = (daysAgo: number): Date => {
+      const date = new Date();
+      date.setDate(date.getDate() - daysAgo);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    };
+    
+    const now = createDate(0);
+    const yesterday = createDate(1);
+    const twoDaysAgo = createDate(2);
+    const threeDaysAgo = createDate(3);
+    const fourDaysAgo = createDate(4);
+    const fiveDaysAgo = createDate(5);
+    
     const sampleExpenses: Expense[] = [
-      { id: '1', category: 'Groceries', amount: 15000 },
-      { id: '2', category: 'Rent', amount: 40000 },
-      { id: '3', category: 'Transportation', amount: 5000 },
-      { id: '4', category: 'Entertainment', amount: 10000 },
-      { id: '5', category: 'Communication', amount: 2000 },
-      { id: '6', category: 'Gym', amount: 3000 }
+      { id: '1', category: 'Groceries', amount: 15000, createdAt: now },
+      { id: '2', category: 'Rent', amount: 40000, createdAt: yesterday },
+      { id: '3', category: 'Transportation', amount: 5000, createdAt: twoDaysAgo },
+      { id: '4', category: 'Entertainment', amount: 10000, createdAt: threeDaysAgo },
+      { id: '5', category: 'Communication', amount: 2000, createdAt: fourDaysAgo },
+      { id: '6', category: 'Gym', amount: 3000, createdAt: fiveDaysAgo }
     ];
     
     setExpenses(sampleExpenses);
@@ -144,6 +220,7 @@ const App: React.FC = () => {
   const clearAll = () => {
     setExpenses([]);
     setSummary(null);
+    setSelectedDate(null);
   };
 
   return (
@@ -167,7 +244,7 @@ const App: React.FC = () => {
           </Toolbar>
         </AppBar>
         
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <ExpenseForm 
             onAddExpense={handleAddExpense} 
             existingCategories={existingCategories}
@@ -202,9 +279,32 @@ const App: React.FC = () => {
               </Button>
             </Box>
           </Box>
+
+          {selectedDate && (
+            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+              <Chip 
+                icon={<CalendarMonthIcon />}
+                label={`Showing expenses for: ${formatDate(selectedDate)}`}
+                color="primary"
+                onDelete={clearSelectedDate}
+                deleteIcon={<ClearIcon />}
+                sx={{ fontWeight: 'bold' }}
+              />
+            </Box>
+          )}
           
-          <ExpenseTable expenses={expenses} />
-          <ExpenseSummary summary={summary} />
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={8}>
+              <ExpenseTable expenses={filteredExpenses} />
+              <ExpenseSummary summary={summary} />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <ExpenseCalendar 
+                expenses={expenses} 
+                onSelectDate={handleSelectDate}
+              />
+            </Grid>
+          </Grid>
           
           <Snackbar
             open={notification.open}

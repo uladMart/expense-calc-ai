@@ -8,7 +8,6 @@ import {
   TableHead, 
   TableRow,
   Typography,
-  Collapse,
   Box
 } from '@mui/material';
 import { Expense } from '../types';
@@ -45,6 +44,17 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({ expenses }) => {
     setPrevExpenses([...expenses]);
   }, [expenses]);
 
+  // Форматирование даты
+  const formatDate = (date: Date): string => {
+    return new Date(date).toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   if (expenses.length === 0) {
     return (
       <Paper elevation={3} sx={{ p: 3, mb: 3, textAlign: 'center', bgcolor: '#f5f9ff' }}>
@@ -62,6 +72,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({ expenses }) => {
           <TableRow>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Category</TableCell>
             <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Amount ($)</TableCell>
+            <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Date Added</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -103,6 +114,9 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({ expenses }) => {
                     }}
                   />
                 )}
+              </TableCell>
+              <TableCell align="right" sx={{ color: '#666', fontSize: '0.875rem' }}>
+                {formatDate(expense.createdAt)}
               </TableCell>
             </TableRow>
           ))}

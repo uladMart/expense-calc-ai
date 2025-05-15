@@ -19,6 +19,17 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ summary }) => {
     return null;
   }
 
+  // Форматирование даты
+  const formatDate = (date: Date): string => {
+    return new Date(date).toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <Paper elevation={3} sx={{ p: 3, bgcolor: '#f5f9ff' }}>
       <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#1976d2' }}>
@@ -53,10 +64,21 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ summary }) => {
             {index > 0 && <Divider />}
             <ListItem>
               <ListItemText
-                primary={expense.category}
-                secondary={`$${expense.amount.toLocaleString()}`}
-                primaryTypographyProps={{ fontWeight: 'medium' }}
-                secondaryTypographyProps={{ fontSize: '1.1rem', color: '#1976d2' }}
+                primary={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography fontWeight="medium">{expense.category}</Typography>
+                    <Typography fontWeight="bold" color="#1976d2">
+                      ${expense.amount.toLocaleString()}
+                    </Typography>
+                  </Box>
+                }
+                secondary={
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Added on: {formatDate(expense.createdAt)}
+                    </Typography>
+                  </Box>
+                }
               />
             </ListItem>
           </React.Fragment>
